@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phrase Correlation</title>
+</head>
+<body>
+<h1>Test</h1>
+
+<div id="poem-container"></div>
+
+<script type="text/javascript" src="../bower_components/jquery/dist/jquery.js" ></script>
+<script type="text/javascript" src="../src/phrase_correlation.js" ></script>
+
+<script>
+    var correlator = window.phraseCorrelator;
+    correlator.init({
+        poemTextCsvUrl: 'data/to_elsie_text.csv',
+        poemPhrasesCsvUrl: 'data/to_elsie_phrases.csv',
+        poemContainer: $('#poem-container')
+    });
+
+</script>
+</body>
+</html>
