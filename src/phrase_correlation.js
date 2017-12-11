@@ -307,7 +307,7 @@
 
     var getTextColor = function(word) {
         var percentage = word.maxCorrelated / Object.keys(recordings).length;
-        var brightness = (255 - Math.floor(percentage * 254) + 128th) % 255;
+        var brightness = (255 - Math.floor(percentage * 254) + 128) % 255;
 
 
         var color = 'rgb(' + brightness + ', ' + brightness + ',' + brightness +')';
