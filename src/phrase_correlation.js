@@ -222,11 +222,11 @@
                     'startWord': phrase.startWord,
                     'endLine': phrase.endLine,
                     'endWord': phrase.endWord,
-                    'recordings': [recordings[phrase.recordingName]]
+                    'recordings': [phrase.recordingName]
                 }
             }
             else {
-                poemPhrases[phrase.id].recordings.push(recordings[phrase.recordingName]);
+                poemPhrases[phrase.id].recordings.push(phrase.recordingName);
             }
         }
 
@@ -379,16 +379,24 @@
                     if(word.text.length > 0) {
                         $word = $("<div class='pc-word'/>");
                         $word.html(word.text);
-                        $word.addClass(getCorrelationClass(word));
 
                         for (var recordingName in recordings) {
-                            $recordingWord = $word.clone();
-
-                            //check to see if this recording is in the
-
+                            var $recordingWord = $word.clone();
+                            $recordingWord.addClass(getRecordingCorrelationClass(recordingName, word));
+                            var phrase = this.getRecordingWordPhrase(recordingName, word);
+                            if(phrase === null) {
+                                $recordingWord.addClass('pc-no-phrase');
+                            }
+                            if(phrase && word.lineNum === phrase.startLine && word.wordNum === phrase.startWord) {
+                                $recordingWord.addClass('pc-phrase-first-word');
+                            }
+                            if(phrase && word.lineNum === phrase.endLine && word.wordNum === phrase.endWord) {
+                                $recordingWord.addClass('pc-phrase-last-word');
+                            }
                             $graphRecordingWords[recordingName].append($recordingWord);
                         }
 
+                        $word.addClass(getCorrelationClass(word));
                         if (word.lastOfPhrase) {
                             $word.addClass('pc-phrase-last-word');
                         }
@@ -444,12 +452,41 @@
         }
     }
 
-    this.getRecordingCorrelationClass = function(recordingName, word)
-    {
-        for(var mPhraseIndex = 0; mPhraseIndex< word.matchedPhrases.length; mPhraseIndex++) {
+    this.getRecordingCorrelationClass = function(recordingName, word) {
+        var phrase = this.getRecordingWordPhrase(recordingName, word);
+        if(phrase === null) return 'pc-correlation-none';
+
+        var correlated = phrase.recordings.length;
+        if(correlated === 1) {
+            return 'pc-correlation-none';
+        }
+        else if(correlated === selectedRecordings.length) {
+            return 'pc-correlation-all';
+        }
+        else {
+            return 'pc-correlation-' + correlated.toString() + 'of' + selectedRecordings.length.toString();
         }
 
     }
+
+    /**
+     * Get the phrase that the specified word in the specified recording belongs to
+     * @param recordingName
+     * @param word //object containing word
+     * @returns {*}
+     */
+    this.getRecordingWordPhrase = function(recordingName, word)
+    {
+        for(var mPhraseIndex = 0; mPhraseIndex< word.matchedPhrases.length; mPhraseIndex++) {
+            var phrase = poemPhrases[word.matchedPhrases[mPhraseIndex]];
+            console.log(phrase);
+            if(phrase.recordings.indexOf(recordingName)) {
+                return phrase;
+            }
+        }
+        return null;
+    }
+
 
     this.getTextColor = function(word) {
         var percentage, color;
