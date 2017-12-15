@@ -21,7 +21,14 @@
 
     var selectedRecordings;
 
-    var CSVToArray = function( strData, strDelimiter ) {
+    /**
+     * Parse CSV data into a 2 dimensional array
+     * @param strData
+     * @param strDelimiter
+     * @returns {[*]}
+     * @constructor
+     */
+    this.CSVToArray = function( strData, strDelimiter ) {
         // Check to see if the delimiter is defined. If not,
         // then default to comma.
         strDelimiter = (strDelimiter || ",");
@@ -104,7 +111,11 @@
         return ( arrData );
     };
 
-    var parsePoemTextFromCsvUrl = function(csvFileUrl) {
+    /**
+     * Go get the poem text and parse into an array - when done check if we are ready to run correlation
+     * @param csvFileUrl
+     */
+    this.parsePoemTextFromCsvUrl = function(csvFileUrl) {
         $.ajax(csvFileUrl)
             .done(function(response) {
                 poemTextArray = CSVToArray(response);
@@ -112,7 +123,11 @@
             });
     };
 
-    var parsePoemPhrasesFromCsvUrl = function(csvFileUrl) {
+    /**
+     * Go get the poem phrases and parse into array - when done check if we are ready to run correlation
+     * @param csvFileUrl
+     */
+    this.parsePoemPhrasesFromCsvUrl = function(csvFileUrl) {
         $.ajax(csvFileUrl)
             .done(function(response) {
                 poemPhrasesArray = CSVToArray(response);
@@ -122,12 +137,11 @@
 
     /**
      * Check to see if both the Phrases and Text have been loaded
+     * If they are then process the data and create dom elements
      */
-    var checkFinished = function()
+    this.checkFinished = function()
     {
         if(poemPhrasesArray && poemTextArray) {
-            console.log(poemPhrasesArray);
-            console.log(poemTextArray);
             processData();
             createElements();
         }
@@ -138,7 +152,7 @@
      * @param lineNum
      * @param wordNum
      */
-    var getPhrasesByWord = function(lineNum, wordNum)
+    this.getPhrasesByWord = function(lineNum, wordNum)
     {
         //for ease of comparison we will convert the lineNum and wordNum to a number
         var searchIndex = lineNum * 1000 + wordNum;
@@ -158,13 +172,24 @@
 
         //sort the matched phrases from most correleted to least correlated
         matchedPhrases.sort(function(phrase1, phrase2) {
-           return phrase2.recordings.length - phrase1.recordings.length;
+            //phrase2 more correlated
+            if(phrase2.recordings.length > phrase1.recordings.length) {
+                return 1;
+            }
+            //phrase1  more correlated
+            else if(phrase2.recordings.length < phrase1.recordings.length) {
+                return -1;
+            }
+            //most be equal -- go with the shortest phrase
+            else {
+               return(phrase1.numWords - phrase2.numWords);
+            }
         });
         return matchedPhrases;
 
     };
 
-    var processData = function()
+    this.processData = function()
     {
         poemPhrases = {};
         recordings = {};
@@ -179,7 +204,7 @@
                 'startWord': parseInt(poemPhrasesArray[i][5]),
                 'endLine': parseInt(poemPhrasesArray[i][6]),
                 'endWord': parseInt(poemPhrasesArray[i][7])
-            };
+            }
             phrase.id = phrase.startLine + '.' + phrase.startWord + '-' + phrase.endLine + '.' + phrase.endWord;
 
             //save the recording
@@ -226,38 +251,61 @@
             }
             else {
                 line.isEmpty = false;
-                line.numWords = wordArray.length;
+                line.numWords = 0;
                 //parse the words
                 for(var wordIndex =0 ; wordIndex < wordArray.length; wordIndex++) {
+                    //if no text in the word just continue
+                    if(wordArray[wordIndex].trim().length ===0 ) continue;
                     var word = { 'wordNum': wordIndex+1 };
                     word.text = wordArray[wordIndex];
                     word.lineNum = line.lineNum;
 
-                    //check on relationship to matched phrases
-                    word.matchedPhrases = getPhrasesByWord(line.lineNum, word.wordNum);
-                    if(word.matchedPhrases.length === 0) {
-                        word.maxCorrelated = 0;
-                        word.lastOfPhrase = false;
-                    }
-                    else {
-                        var maxPhrase = word.matchedPhrases[0];
-                        word.maxCorrelated = maxPhrase.recordings.length;
-                        word.firstOfPhrase = word.lineNum === maxPhrase.startLine && word.wordNum === maxPhrase.startWord;
-                        word.lastOfPhrase  = word.lineNum === maxPhrase.endLine && word.wordNum === maxPhrase.endWord;
-                    }
-
                     //add word to the line
                     line.words[word.wordNum.toString()] = word;
+                    line.numWords++;
                 }
             }
 
             poemLines[line.lineNum.toString()] = line;
         }
 
+        //go get the words in the phrase
+        for(var phraseIndex in poemPhrases) {
+            poemPhrases[phraseIndex].numWords = getNumWordsInPhrase(poemPhrases[phraseIndex]);
+        }
 
-    };
+        this.matchWordsToPhrases();
+        console.log(poemLines);
+    }
 
-    var getWordsInPhrase = function(phrase) {
+    /**
+     *
+     */
+    this.matchWordsToPhrases = function()
+    {
+        for(var lineNum in poemLines) {
+            var line = poemLines[lineNum];
+            for(var wordNum in line.words) {
+                var word = line.words[wordNum];
+                var matchedPhrases = getPhrasesByWord(line.lineNum,word.wordNum);
+
+                poemLines[lineNum].words[wordNum].matchedPhrases = matchedPhrases;
+                if(matchedPhrases.length === 0) {
+                    poemLines[lineNum].words[wordNum].maxCorrelated = 0;
+                    poemLines[lineNum].words[wordNum].lastOfPhrase = false;
+                }
+                else {
+                    var maxPhrase = matchedPhrases[0];
+                    poemLines[lineNum].words[wordNum].maxCorrelated = maxPhrase.recordings.length;
+                    poemLines[lineNum].words[wordNum].firstOfPhrase = word.lineNum === maxPhrase.startLine && word.wordNum === maxPhrase.startWord;
+                    poemLines[lineNum].words[wordNum].lastOfPhrase  = word.lineNum === maxPhrase.endLine && word.wordNum === maxPhrase.endWord;
+                }
+            }
+        }
+
+    }
+
+    this.getNumWordsInPhrase = function(phrase) {
         var numWords = 0;
 
         for(var lineNum = phrase.startLine; lineNum <= phrase.endLine; lineNum++) {
@@ -275,7 +323,7 @@
         return numWords;
     }
 
-    var checkLineEmpty = function(wordArray)
+    this.checkLineEmpty = function(wordArray)
     {
         for(var i = 0; i < wordArray.length; i++) {
            if(wordArray[i].trim().length > 0) return false;
@@ -284,7 +332,7 @@
     };
 
 
-    var createElements = function() {
+    this.createElements = function() {
         var $formatted, $graph, $graphWords, $recordingControls;
 
         //set up format to contain formatted poem text
@@ -357,7 +405,7 @@
         $poemContainer.append($formatted);
     };
 
-    var getBackgroundColor = function(word) {
+    this.getBackgroundColor = function(word) {
         var percentage, hue, saturation, lightness;
         if(Object.keys(recordings) == 1) {
             percentage = 0;
@@ -380,7 +428,7 @@
         return color;
     };
 
-    var getCorrelationClass = function(word) {
+    this.getCorrelationClass = function(word) {
         if(word.maxCorrelated === 1) {
             return 'pc-correlation-none';
         }
@@ -391,7 +439,8 @@
             return 'pc-correlation-' + word.maxCorrelated.toString() + 'of' + selectedRecordings.length.toString();
         }
     }
-    var getTextColor = function(word) {
+
+    this.getTextColor = function(word) {
         var percentage, color;
 
         percentage = (word.maxCorrelated - 1)/ (Object.keys(recordings).length - 1);
