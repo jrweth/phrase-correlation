@@ -166,23 +166,23 @@
             endIndex = phrase.endLine * 1000 + phrase.endWord;
 
             if(startIndex <= searchIndex && searchIndex <= endIndex) {
-                matchedPhrases.push(phrase);
+                matchedPhrases.push(phraseId);
             }
         }
 
         //sort the matched phrases from most correleted to least correlated
-        matchedPhrases.sort(function(phrase1, phrase2) {
+        matchedPhrases.sort(function(phraseId1, phraseId2) {
             //phrase2 more correlated
-            if(phrase2.recordings.length > phrase1.recordings.length) {
+            if(poemPhrases[phraseId2].recordings.length > poemPhrases[phraseId1].recordings.length) {
                 return 1;
             }
             //phrase1  more correlated
-            else if(phrase2.recordings.length < phrase1.recordings.length) {
+            else if(poemPhrases[phraseId2].recordings.length < poemPhrases[phraseId1].recordings.length) {
                 return -1;
             }
             //most be equal -- go with the shortest phrase
             else {
-               return(phrase1.numWords - phrase2.numWords);
+               return(poemPhrases[phraseId1].numWords - poemPhrases[phraseId2].numWords);
             }
         });
         return matchedPhrases;
@@ -276,6 +276,7 @@
 
         this.matchWordsToPhrases();
         console.log(poemLines);
+        console.log(poemPhrases);
     }
 
     /**
@@ -295,7 +296,7 @@
                     poemLines[lineNum].words[wordNum].lastOfPhrase = false;
                 }
                 else {
-                    var maxPhrase = matchedPhrases[0];
+                    var maxPhrase = poemPhrases[matchedPhrases[0]];
                     poemLines[lineNum].words[wordNum].maxCorrelated = maxPhrase.recordings.length;
                     poemLines[lineNum].words[wordNum].firstOfPhrase = word.lineNum === maxPhrase.startLine && word.wordNum === maxPhrase.startWord;
                     poemLines[lineNum].words[wordNum].lastOfPhrase  = word.lineNum === maxPhrase.endLine && word.wordNum === maxPhrase.endWord;
@@ -382,6 +383,9 @@
 
                         for (var recordingName in recordings) {
                             $recordingWord = $word.clone();
+
+                            //check to see if this recording is in the
+
                             $graphRecordingWords[recordingName].append($recordingWord);
                         }
 
@@ -438,6 +442,13 @@
         else {
             return 'pc-correlation-' + word.maxCorrelated.toString() + 'of' + selectedRecordings.length.toString();
         }
+    }
+
+    this.getRecordingCorrelationClass = function(recordingName, word)
+    {
+        for(var mPhraseIndex = 0; mPhraseIndex< word.matchedPhrases.length; mPhraseIndex++) {
+        }
+
     }
 
     this.getTextColor = function(word) {
