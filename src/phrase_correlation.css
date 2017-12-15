@@ -1,0 +1,65 @@
+.pc-formatted {
+
+}
+
+.pc-graph {
+    width: 500px;
+    overflow-y: scroll;
+}
+
+.pc-graph-words,
+.pc-recording-graph
+{
+    width: 1000000px
+}
+
+.pc-recording-controls {
+    float: left;
+}
+
+.pc-recording-control {
+
+}
+.pc-recording-graph {
+    color: black;
+    background-color: white;
+}
+
+
+.pc-line-empty {
+
+}
+.pc-line {
+
+}
+.pc-word {
+    display: inline-block;
+    border-width: 0em 0.15em;
+    border-style: solid;
+}
+
+
+.pc-correlation-none {color: black; background-color: white; border-color: white }
+.pc-correlation-all  {color: white; background-color: black; border-color: black }
+
+.pc-correlation-2of3 {color: black; background-color: hsl(  0,  0%, 50%); border-color: hsl(  0, 0%, 50%) }
+
+.pc-correlation-2of4 {color: black; background-color: hsl(  0,  0%, 66%); border-color: hsl(  0, 0%, 66%) }
+.pc-correlation-3of4 {color: black; background-color: hsl(  0,  0%, 33%); border-color: hsl(  0, 0%, 33%) }
+
+.pc-correlation-2of5 {color: black; background-color: hsl(  0,  0%, 75%); border-color: hsl(  0, 0%, 75%) }
+.pc-correlation-3of5 {color: black; background-color: hsl(  0,  0%, 50%); border-color: hsl(  0, 0%, 50%) }
+.pc-correlation-4of5 {color: white; background-color: hsl(  0,  0%, 25%); border-color: hsl(  0, 0%, 25%) }
+
+
+.pc-phrase-last-word {
+    border-top-right-radius: .5em;
+    border-bottom-right-radius: .5em;
+    border-right-color: red;
+}
+
+.pc-phrase-first-word {
+    border-top-left-radius: .5em;
+    border-bottom-left-radius: .5em;
+    border-left-color: red;
+}

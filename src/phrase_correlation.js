@@ -8,9 +8,6 @@
     //the poem phrases summarized by distinct phrase
     var poemPhrases;
 
-    //the poem words
-    var poemWords;
-
     //the poem lines
     var poemLines;
 
@@ -21,6 +18,8 @@
     var $poemContainer;
 
     var recordings;
+
+    var selectedRecordings;
 
     var CSVToArray = function( strData, strDelimiter ) {
         // Check to see if the delimiter is defined. If not,
@@ -163,7 +162,7 @@
         });
         return matchedPhrases;
 
-    }
+    };
 
     var processData = function()
     {
@@ -205,8 +204,11 @@
                 poemPhrases[phrase.id].recordings.push(recordings[phrase.recordingName]);
             }
         }
-        console.log(poemPhrases);
-        console.log(recordings);
+
+        selectedRecordings = [];
+        for(var recordingName in recordings) {
+           selectedRecordings.push(recordingName);
+        }
 
         //parse the lines
         numLines = poemTextArray.length;
@@ -218,7 +220,7 @@
             };
 
             var wordArray = poemTextArray[lineIndex];
-            if (wordArray.length === 0 || (wordArray.length === 1 && wordArray[0].trim().length === 0)) {
+            if (checkLineEmpty(wordArray)) {
                 line.isEmpty = true;
                 line.words = {};
             }
@@ -240,6 +242,7 @@
                     else {
                         var maxPhrase = word.matchedPhrases[0];
                         word.maxCorrelated = maxPhrase.recordings.length;
+                        word.firstOfPhrase = word.lineNum === maxPhrase.startLine && word.wordNum === maxPhrase.startWord;
                         word.lastOfPhrase  = word.lineNum === maxPhrase.endLine && word.wordNum === maxPhrase.endWord;
                     }
 
@@ -250,8 +253,194 @@
 
             poemLines[line.lineNum.toString()] = line;
         }
-        console.log(poemLines);
+
+
     };
+
+    var getWordsInPhrase = function(phrase) {
+        var numWords = 0;
+
+        for(var lineNum = phrase.startLine; lineNum <= phrase.endLine; lineNum++) {
+            var line = poemLines[lineNum.toString()];
+            for(var wordIndex in line.words) {
+                var word = line.words[wordIndex];
+
+                numWords++;
+                //doesn't count -- before start word
+                if(lineNum === phrase.startLine && word.wordNum < phrase.startWord) numWords--;
+                //doesn't count -- after end word
+                if(lineNum === phrase.endLine && word.wordNum > phrase.endWord) numWords--;
+            }
+        }
+        return numWords;
+    }
+
+    var checkLineEmpty = function(wordArray)
+    {
+        for(var i = 0; i < wordArray.length; i++) {
+           if(wordArray[i].trim().length > 0) return false;
+        }
+        return true;
+    };
+
+
+    var createElements = function() {
+        var $formatted, $graph, $graphWords, $recordingControls;
+
+        //set up format to contain formatted poem text
+        $formatted = $('<div class="pc-formatted"/>');
+
+
+        //set up graph to contain graph of phrases
+        $graph = $('<div class="pc-graph"/>');
+        $graph.css('height', recordings.length + 'em');
+
+        //set up the graph word line
+        $graphWords = $('<div class="pc-graph-words"/>');
+        $graph.append($graphWords);
+
+        //set up the recording controls
+        $recordingControls = $('<div class="pc-recording-controls"/>');
+        $recordingControls.append('<div class="pc-recording-control">Summary</div>');
+
+        //set up a line for each recording
+        var $graphRecordingWords = {};
+        for(var recordingName in recordings) {
+            $graphRecordingWords[recordingName] = $('<div class="pc-recording-graph"/>');
+            $graph.append($graphRecordingWords[recordingName]);
+
+            $recordingControls.append('<div class="pc-recording-control">' + recordingName + '</div>');
+        }
+
+        //set up the recording labels
+
+        for(var lineNum = 1; lineNum <= numLines; lineNum++) {
+            var line = poemLines[lineNum.toString()];
+
+            //create each line
+            $line = $("<div class='pc-line'/>");
+            if(line.isEmpty) {
+                $line.addClass('pc-line-empty');
+                $line.html('&#160;');
+            }
+            else {
+                //Loop through each word and add it to the line
+                for(var wordNum = 1; wordNum <= line.numWords; wordNum++) {
+                    var word = line.words[wordNum.toString()];
+                    if(word.text.length > 0) {
+                        $word = $("<div class='pc-word'/>");
+                        $word.html(word.text);
+                        $word.addClass(getCorrelationClass(word));
+
+                        for (var recordingName in recordings) {
+                            $recordingWord = $word.clone();
+                            $graphRecordingWords[recordingName].append($recordingWord);
+                        }
+
+                        if (word.lastOfPhrase) {
+                            $word.addClass('pc-phrase-last-word');
+                        }
+                        if (word.firstOfPhrase) {
+                            $word.addClass('pc-phrase-first-word');
+                        }
+
+                        $line.append($word);
+                        $graphWords.append($word.clone());
+                    }
+                }
+            }
+            $formatted.append($line);
+        }
+
+        $poemContainer.append($recordingControls);
+        $poemContainer.append($graph);
+        $poemContainer.append($formatted);
+    };
+
+    var getBackgroundColor = function(word) {
+        var percentage, hue, saturation, lightness;
+        if(Object.keys(recordings) == 1) {
+            percentage = 0;
+        }
+        else {
+            percentage = (word.maxCorrelated - 1)/ (Object.keys(recordings).length - 1);
+        }
+
+        hue = 360 * percentage;
+
+        saturation = 100 *(1 - percentage);
+        saturation = 75;
+
+        lightness = 100 * (1-percentage);
+
+
+        var brightness = Math.floor(255 - percentage * 254);
+
+        var color = 'hsl(' + hue + ', ' + saturation + '%,' + lightness +'%)';
+        return color;
+    };
+
+    var getCorrelationClass = function(word) {
+        if(word.maxCorrelated === 1) {
+            return 'pc-correlation-none';
+        }
+        else if(word.maxCorrelated === selectedRecordings.length) {
+            return 'pc-correlation-all';
+        }
+        else {
+            return 'pc-correlation-' + word.maxCorrelated.toString() + 'of' + selectedRecordings.length.toString();
+        }
+    }
+    var getTextColor = function(word) {
+        var percentage, color;
+
+        percentage = (word.maxCorrelated - 1)/ (Object.keys(recordings).length - 1);
+
+        if(percentage < .5) {
+            color = "black";
+        }
+        else {
+            color = "white";
+        }
+
+        return color;
+
+    };
+
+    var wordIsPhraseStartWord = function(lineNum, wordNum, recordingName) {
+
+        var phrases = getPhrasesByWord(lineNum, wordNum);
+        for(var i=0; i< phrase.length; i++) {
+
+            if(lineNum === phrases[i].startLine && wordNum === phrases[i].startWord) {
+                for(var j=0; j < phrases[i].recordings; j++) {
+                    if (phrases[i].recordings[j].recordingName === recordingName) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    };
+
+    var wordIsPhraseEndWord = function(lineNum, wordNum, recordingName) {
+
+        var phrases = getPhrasesByWord(lineNum, wordNum);
+        for(var i=0; i< phrase.length; i++) {
+
+            if(lineNum === phrases[i].endLine && wordNum === phrases[i].endWord) {
+                for(var j=0; j < phrases[i].recordings; j++) {
+                    if (phrases[i].recordings[j].recordingName === recordingName) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    };
+
 
     /**
      * Initialize the correlator
@@ -265,56 +454,7 @@
         parsePoemTextFromCsvUrl(options.poemTextCsvUrl);
         parsePoemPhrasesFromCsvUrl(options.poemPhrasesCsvUrl);
         $poemContainer = options.poemContainer;
-    }
-
-    var createElements = function() {
-        for(var lineNum = 1; lineNum <= numLines; lineNum++) {
-            var line = poemLines[lineNum.toString()];
-
-            //create each line
-            $line = $("<div/>");
-            $line.addClass('line');
-            if(line.isEmpty) {
-                $line.addClass('line-empty');
-                $line.html('&#160;');
-            }
-            else {
-                //Loop through each word and add it to the line
-                for(var wordNum = 1; wordNum <= line.numWords; wordNum++) {
-                    var word = line.words[wordNum.toString()];
-                    $word = $("<span/>");
-                    $word.addClass('word');
-                    $word.css('background-color', getBackgroundColor(word));
-                    $word.css('color', getTextColor(word));
-                    $word.html(word.text + ' ');
-                    if(word.lastOfPhrase) {
-                        $word.css('border-right', '2px solid red');
-                    }
-                    $line.append($word);
-                }
-            }
-            $poemContainer.append($line);
-        }
-    }
-
-    var getBackgroundColor = function(word) {
-        var percentage = word.maxCorrelated / Object.keys(recordings).length;
-        var brightness = Math.floor(255 - percentage * 254);
-
-        var color = 'rgb(' + brightness + ', ' + brightness + ',' + brightness +')';
-        return color;
-    }
-
-    var getTextColor = function(word) {
-        var percentage = word.maxCorrelated / Object.keys(recordings).length;
-        var brightness = (255 - Math.floor(percentage * 254) + 128) % 255;
-
-
-        var color = 'rgb(' + brightness + ', ' + brightness + ',' + brightness +')';
-
-        return color;
-
-    }
+    };
 
     window.phraseCorrelator = {
         init: init,
