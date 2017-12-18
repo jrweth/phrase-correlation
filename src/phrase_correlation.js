@@ -412,6 +412,7 @@
                         }
 
                         $word.addClass(getCorrelationClass(word));
+                        $word.attr('data-word-id', word.wordId);
                         if (word.lastOfPhrase) {
                             $word.addClass('pc-phrase-last-word');
                         }
@@ -427,8 +428,11 @@
             $formatted.append($line);
         }
 
-        $poemContainer.append($recordingControls);
+        $poemControlContainer = ($('<div class="pc-controls-container"/>'))
+        $poemControlContainer.append($recordingControls);
+        $poemContainer.append($poemControlContainer);
         $poemContainer.append($graph);
+        $poemContainer.append('<h2>Text With Phrase Correlation</h2>');
         $poemContainer.append($formatted);
     };
 
@@ -518,38 +522,11 @@
 
     };
 
-    var wordIsPhraseStartWord = function(lineNum, wordNum, recordingName) {
 
-        var phrases = getPhrasesByWord(lineNum, wordNum);
-        for(var i=0; i< phrase.length; i++) {
+    var wordClicked = function(wordId) {
+        $summaryWord =  $('.pc-graph-words div.pc-word[data-word-id="' + wordId + '"]');
+        $('.pc-graph').scrollLeft($summaryWord.position().left-324);
 
-            if(lineNum === phrases[i].startLine && wordNum === phrases[i].startWord) {
-                for(var j=0; j < phrases[i].recordings; j++) {
-                    if (phrases[i].recordings[j].recordingName === recordingName) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    };
-
-    var wordIsPhraseEndWord = function(lineNum, wordNum, recordingName) {
-
-        var phrases = getPhrasesByWord(lineNum, wordNum);
-        for(var i=0; i< phrase.length; i++) {
-
-            if(lineNum === phrases[i].endLine && wordNum === phrases[i].endWord) {
-                for(var j=0; j < phrases[i].recordings; j++) {
-                    if (phrases[i].recordings[j].recordingName === recordingName) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
     };
 
 
@@ -565,6 +542,11 @@
         parsePoemTextFromCsvUrl(options.poemTextCsvUrl);
         parsePoemPhrasesFromCsvUrl(options.poemPhrasesCsvUrl);
         $poemContainer = options.poemContainer;
+
+        //add word click listener
+        $poemContainer.on('click', '.pc-word', function() {
+            wordClicked($(this).attr('data-word-id'));
+        });
     };
 
     window.phraseCorrelator = {

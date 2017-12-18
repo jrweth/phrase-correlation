@@ -22,7 +22,7 @@
 }
 .pc-recording-graph {
     color: black;
-    background-color: white;
+    background-color: transparent;
 }
 
 
@@ -38,11 +38,23 @@
     border-style: solid;
 }
 
+.pc-recording-control,
+.pc-graph
+{
+    font-size: 1.5em;
+}
+
+.pc-recording-control
+{
+    border-bottom: 1px solid black;
+}
+
 .pc-recording-graph,
 .pc-graph-words,
 .pc-recording-control
 {
-    margin: 0.3em;
+    border-bottom: 1px solid black;
+    padding: 0.3em;
 }
 
 .pc-correlation-none {color: black; background-color: white; border-color: white }
