@@ -11,6 +11,9 @@
     //the poem lines
     var poemLines;
 
+    //the poem words
+    var poemWords;
+
     //the number of lines in the poem
     var numLines;
 
@@ -192,14 +195,17 @@
     this.processData = function()
     {
         poemPhrases = {};
+        poemWords = {};
         recordings = {};
+        console.log(poemPhrasesArray);
         for(var i=1; i< poemPhrasesArray.length; i++ ) {
+
 
             var phrase = {
                 'recordingName': poemPhrasesArray[i][0],
                 'recordingUrl': poemPhrasesArray[i][1],
-                'startTime': parseFloat(poemPhrasesArray[i][2]),
-                'endTime': parseFloat(poemPhrasesArray[i][3]),
+                'startTime': poemPhrasesArray[i][2],
+                'endTime': poemPhrasesArray[i][3],
                 'startLine': parseInt(poemPhrasesArray[i][4]),
                 'startWord': parseInt(poemPhrasesArray[i][5]),
                 'endLine': parseInt(poemPhrasesArray[i][6]),
@@ -208,12 +214,18 @@
             phrase.id = phrase.startLine + '.' + phrase.startWord + '-' + phrase.endLine + '.' + phrase.endWord;
 
             //save the recording
-            if(typeof(recordings[phrase.recordingName] === 'undefined')) {
+            if(typeof(recordings[phrase.recordingName]) === 'undefined') {
                 recordings[phrase.recordingName] = {
                     name: phrase.recordingName,
-                    url: phrase.recordingUrl
+                    url: phrase.recordingUrl,
+                    phrases: {}
                 };
             }
+
+            recordings[phrase.recordingName].phrases[phrase.id] = {
+                startTime: phrase.startTime,
+                endTime: phrase.endTime
+            };
 
             //save the phrase
             if(typeof(poemPhrases[phrase.id]) === 'undefined') {
@@ -259,9 +271,11 @@
                     var word = { 'wordNum': wordIndex+1 };
                     word.text = wordArray[wordIndex];
                     word.lineNum = line.lineNum;
+                    word.wordId = line.lineNum.toString() + '.' + word.wordNum.toString();
 
                     //add word to the line
                     line.words[word.wordNum.toString()] = word;
+                    poemWords[word.wordId] = word;
                     line.numWords++;
                 }
             }
@@ -277,6 +291,7 @@
         this.matchWordsToPhrases();
         console.log(poemLines);
         console.log(poemPhrases);
+        console.log(recordings);
     }
 
     /**
@@ -479,8 +494,7 @@
     {
         for(var mPhraseIndex = 0; mPhraseIndex< word.matchedPhrases.length; mPhraseIndex++) {
             var phrase = poemPhrases[word.matchedPhrases[mPhraseIndex]];
-            console.log(phrase);
-            if(phrase.recordings.indexOf(recordingName)) {
+            if(phrase.recordings.indexOf(recordingName)>-1) {
                 return phrase;
             }
         }
