@@ -349,7 +349,7 @@
 
 
     this.createElements = function() {
-        var $formatted, $graph, $graphWords, $recordingControls;
+        var $formatted, $graph, $graphWords, $recordingControls, $audioViewer;
 
         //set up format to contain formatted poem text
         $formatted = $('<div class="pc-formatted"/>');
@@ -367,13 +367,34 @@
         $recordingControls = $('<div class="pc-recording-controls"/>');
         $recordingControls.append('<div class="pc-recording-control">Summary</div>');
 
+
+        $audioViewer = $('<div class="pc-audio-viewer"></div>');
+
         //set up a line for each recording
         var $graphRecordingWords = {};
         for(var recordingName in recordings) {
             $graphRecordingWords[recordingName] = $('<div class="pc-recording-graph"/>');
+            $graphRecordingWords[recordingName].attr('data-recording-name', recordingName);
             $graph.append($graphRecordingWords[recordingName]);
 
-            $recordingControls.append('<div class="pc-recording-control">' + recordingName + '</div>');
+            var $recordingControl = $('<div class="pc-recording-control"></div>');
+
+            var $audio = $('<audio/>');
+            $audio.attr('controls', 'controls');
+            $audio.attr('src', recordings[recordingName].url);
+            $audio.attr('data-recording-name', recordingName);
+            var $audioDiv = $('<div><div class="pc-audio-viewer-label">' + recordingName + '</div></div>');
+            $audioDiv.prepend($audio);
+
+            $audioViewer.append($audioDiv);
+
+            var $playButton = $('<div class="pc-play-button pc-paused">&#9654;</div>');
+            $playButton.attr('data-recording-name',recordingName);
+            $recordingControl.append($playButton);
+
+            $recordingControl.append('<div class="pc-recording-label">' + recordingName + '</div>');
+
+            $recordingControls.append($recordingControl);
         }
 
         //set up the recording labels
@@ -394,6 +415,7 @@
                     if(word.text.length > 0) {
                         $word = $("<div class='pc-word'/>");
                         $word.html(word.text);
+                        $word.attr('data-word-id', word.wordId);
 
                         for (var recordingName in recordings) {
                             var $recordingWord = $word.clone();
@@ -430,6 +452,7 @@
 
         $poemControlContainer = ($('<div class="pc-controls-container"/>'))
         $poemControlContainer.append($recordingControls);
+        $poemContainer.append($audioViewer);
         $poemContainer.append($poemControlContainer);
         $poemContainer.append($graph);
         $poemContainer.append('<h2>Text With Phrase Correlation</h2>');
@@ -529,6 +552,26 @@
 
     };
 
+    this.playButtonClicked = function(recordingName) {
+        console.log(recordingName);
+        var $audio = $('audio[data-recording-name="' + recordingName + '"]');
+        var $playButton = $('.pc-play-button[data-recording-name="' + recordingName + '"]');
+        if($audio.prop('paused')) {
+            $audio[0].play();
+            $audio.show();
+            $playButton.removeClass('pc-paused');
+            $playButton.addClass('pc-playing');
+            $playButton.html('&#10073;&#10073;');
+        }
+        else {
+            $audio[0].pause();
+            $playButton.removeClass('pc-playing');
+            $playButton.addClass('pc-paused');
+            $playButton.html('&#9654;');
+        }
+
+    };
+
 
     /**
      * Initialize the correlator
@@ -547,6 +590,10 @@
         $poemContainer.on('click', '.pc-word', function() {
             wordClicked($(this).attr('data-word-id'));
         });
+
+        $poemContainer.on('click', '.pc-play-button', function() {
+            playButtonClicked($(this).attr('data-recording-name'));
+        })
     };
 
     window.phraseCorrelator = {
