@@ -499,7 +499,6 @@
                 $phrase.append($word);
             }
 
-            console.log(recording.phrases[phraseId].duration);
             tempo = Math.round(10 *poemPhrases[phraseId].numWords / recording.phrases[phraseId].duration) /10;
             $phrase.append('<div class="pc-tempo">t:' + tempo.toString() + '</div>');
             $recordingGraph.append($phrase);
