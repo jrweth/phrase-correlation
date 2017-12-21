@@ -300,9 +300,6 @@
         }
 
         this.matchWordsToPhrases();
-        console.log(poemLines);
-        console.log(poemPhrases);
-        console.log(recordings);
     }
 
     /**
@@ -460,6 +457,7 @@
         $graphContainer.append($graphLabels);
         $graphContainer.append($graph);
         $poemInfo.append($graphContainer);
+        $poemInfo.append('<div class="pc-play-options"><input type="checkbox" class="pc-play-option-pause" />Pause after selected phrase played</div>');
         $poemInfo.append($audioPlayers);
         $poemContainer.append($poemInfo);
         $poemContainer.append($formatted);
@@ -671,7 +669,13 @@
         var startTime = recordings[recordingName].phrases[phraseId].startTime;
         var endTime = recordings[recordingName].phrases[phraseId].endTime;
 
-        this.play(recordingName, startTime, endTime);
+        var $optionPause = $('.pc-play-option-pause');
+        if($optionPause.prop('checked')) {
+            this.play(recordingName, startTime, endTime);
+        }
+        else {
+            this.play(recordingName, startTime);
+        }
     }
 
     /**
@@ -685,8 +689,6 @@
         //find the first word
         $summaryWord =  $('.pc-graph-words div.pc-word[data-word-id="' + wordId + '"]');
         $graph = $('.pc-graph');
-        console.log('first word' + $firstWord.position().left);
-        console.log('target word' + $summaryWord.position().left);
         $graph.scrollLeft($summaryWord.position().left - $firstWord.position().left );
 
     };
