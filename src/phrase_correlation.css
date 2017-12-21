@@ -11,7 +11,6 @@
 
 /* formatted poem text */
 .pc-formatted {
-    border: 1px solid black;
     flex-grow: 1;
     flex-shrink: 0;
     overflow-y: scroll;
@@ -19,7 +18,6 @@
 
 /* recording broken down */
 .pc-info {
-    border: 1px solid green;
     flex-grow: 2;
     display: flex;
     flex-flow: column nowrap;
@@ -91,6 +89,10 @@ audio.pc-audio-element {
     display: inline-block;
     border-width: 0em 0.15em;
     border-style: solid;
+}
+
+.pc-formatted .pc-word {
+    cursor: pointer;
 }
 
 .pc-graph-label,
