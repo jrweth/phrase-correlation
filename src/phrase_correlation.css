@@ -1,46 +1,77 @@
+
+/* outermost div - js sets height to fit the remainder of page */
+.pc-container
+{
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: nowrap;
+    width: 100%;
+    justify-content: flex-end;
+}
+
+/* formatted poem text */
 .pc-formatted {
-
-}
-
-
-audio {
-    display: block;
-    float:left;
-    vertical-align: baseline;
-
-}
-.pc-audio-player {
-    height: 1em;
-}
-.pc-audio-player-recording {
-}
-.pc-audio-player-label {
-    display: inline-block;
-    font-size: 1.5em;
-    padding-left: .5em;
-}
-.pc-graph {
-    width: 500px;
+    border: 1px solid black;
+    flex-grow: 1;
+    flex-shrink: 0;
     overflow-y: scroll;
 }
 
-.pc-graph-words,
-.pc-recording-graph
-{
-    width: 1000000px
+/* recording broken down */
+.pc-info {
+    border: 1px solid green;
+    flex-grow: 2;
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+
+
+.pc-graph-container {
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+}
+.pc-graph {
+    overflow-y: scroll;
 }
 
 .pc-graph-labels {
-    float: left;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+.pc-graph-words,
+.pc-recording-graph
+{
+    height: 1em;
+    width: 100000000px;
 }
 
-.pc-recording-control {
 
+audio.pc-audio-element {
+    display: block;
+    float:left;
+    vertical-align: baseline;
 }
+
+.pc-audio-players {
+    height: 1em;
+}
+
+.pc-audio-player-recording {
+}
+
+.pc-audio-player-label {
+    display: inline-block;
+    font-size: 1em;
+    padding-left: .5em;
+}
+
 .pc-recording-graph {
     color: black;
     background-color: transparent;
 }
+
 .pc-recording-phrase {
     display: inline-block;
     margin: 0em;
@@ -62,20 +93,20 @@ audio {
     border-style: solid;
 }
 
-.pc-recording-control,
+.pc-graph-label,
 .pc-graph
 {
-    font-size: 1.2em;
+    font-size: 1.0em;
 }
 
-.pc-recording-control
+.pc-graph-label
 {
     border-bottom: 1px solid black;
 }
 
 .pc-recording-graph,
 .pc-graph-words,
-.pc-recording-control
+.pc-graph-label
 {
     border-bottom: 1px solid black;
     padding: 0.3em;

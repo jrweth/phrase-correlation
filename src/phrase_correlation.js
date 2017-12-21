@@ -151,6 +151,7 @@
         if(poemPhrasesArray && poemTextArray) {
             processData();
             createElements();
+            onResize();
         }
     };
 
@@ -378,11 +379,11 @@
 
 
     this.createElements = function() {
-        var $formatted, $graph, $graphWords, $graphLabels, $audioViewer;
+        var $formatted, $graph, $graphWords, $graphLabels, $graphContainer, $audioPlayers, $poemInfo;
 
+        $poemContainer.addClass('pc-container');
         //set up format to contain formatted poem text
         $formatted = $('<div class="pc-formatted"/>');
-
 
         //set up graph to contain graph of phrases
         $graph = $('<div class="pc-graph"/>');
@@ -394,16 +395,16 @@
 
         //set up the recording controls
         $graphLabels = $('<div class="pc-graph-labels"/>');
-        $graphLabels.append('<div class="pc-recording-control">Summary</div>');
+        $graphLabels.append('<div class="pc-graph-label">Summary</div>');
 
 
-        $audioViewer = $('<div class="pc-audio-player"></div>');
+        $audioPlayers = $('<div class="pc-audio-players"></div>');
 
         //set up a line for each recording
         var $graphRecordingWords = {};
         for(var recordingName in recordings) {
 
-            var $recordingControl = $('<div class="pc-recording-control"></div>');
+            var $recordingControl = $('<div class="pc-graph-label"></div>');
 
 
             var $playButton = $('<div class="pc-play-button pc-paused">&#9654;</div>');
@@ -415,7 +416,7 @@
             $graphLabels.append($recordingControl);
 
             $graph.append(this.createRecordingGraphElement(recordingName));
-            $audioViewer.append(this.createAudioPlayerRecordingElement(recordingName));
+            $audioPlayers.append(this.createAudioPlayerRecordingElement(recordingName));
         }
 
         //set up the recording labels
@@ -454,12 +455,13 @@
             $formatted.append($line);
         }
 
-        $poemControlContainer = ($('<div class="pc-controls-container"/>'))
-        $poemControlContainer.append($graphLabels);
-        $poemContainer.append($poemControlContainer);
-        $poemContainer.append($graph);
-        $poemContainer.append($audioViewer);
-        $poemContainer.append('<h2>Text With Phrase Correlation</h2>');
+        $poemInfo = ($('<div class="pc-info"/>'));
+        $graphContainer = ($('<div class="pc-graph-container"></div>'));
+        $graphContainer.append($graphLabels);
+        $graphContainer.append($graph);
+        $poemInfo.append($graphContainer);
+        $poemInfo.append($audioPlayers);
+        $poemContainer.append($poemInfo);
         $poemContainer.append($formatted);
     };
 
@@ -519,7 +521,7 @@
         $audioDiv.hide();
 
         //create the audio element
-        $audio = $('<audio/>');
+        $audio = $('<audio class="pc-audio-element"/>');
         $audio.attr('controls', 'controls');
         $audio.attr('src', recordings[recordingName].url);
         $audio.attr('data-recording-name', recordingName);
@@ -677,12 +679,29 @@
      * @param wordId
      */
     var formattedWordClicked = function(wordId) {
-        //find where
+        var $firstWord, $summaryWord, $graph;
+
+        $firstWord = $('.pc-graph-words').first();
+        //find the first word
         $summaryWord =  $('.pc-graph-words div.pc-word[data-word-id="' + wordId + '"]');
-        $('.pc-graph').scrollLeft($summaryWord.position().left-324);
+        $graph = $('.pc-graph');
+        console.log('first word' + $firstWord.position().left);
+        console.log('target word' + $summaryWord.position().left);
+        $graph.scrollLeft($summaryWord.position().left - $firstWord.position().left );
 
     };
 
+    this.onResize = function() {
+        var $graph;
+        //set the poem container to fill up the remainder of the screen
+        $poemContainer.height($(window).height() - $poemContainer.offset().top);
+        $poemContainer.width($(window).width());
+
+        $graph = $('.pc-graph');
+        $graph.width($(window).width() - $graph.offset().left);
+
+        //$('.pc-graph').width($(window).width() - $('.pc-graph').offset().left);
+    }
     /**
      * Initialize the correlator
      * @param options
@@ -690,7 +709,7 @@
      * - poemPhrasesCsvUrl: (required) The url of the csv file containing the poem phrases
      * - poemContainer:    (required) jQuery object of the poem container
      */
-    var init = function(options)
+    this.init = function(options)
     {
         this.timeOut = -1;
         parsePoemTextFromCsvUrl(options.poemTextCsvUrl);
@@ -711,10 +730,14 @@
             graphPhraseClicked($this.attr('data-phrase-id'), $this.attr('data-recording-name'));
         })
 
+
+        $(window).resize(function() {onResize()});
+
+
     };
 
     window.phraseCorrelator = {
-        init: init,
+        init: this.init,
         getPoemLines: function() { return poemLines;}
     };
 })(window, jQuery);
