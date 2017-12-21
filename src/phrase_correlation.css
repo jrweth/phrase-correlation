@@ -2,8 +2,22 @@
 
 }
 
-.pc-audio-viewer-label {
+
+audio {
+    display: block;
+    float:left;
+    vertical-align: baseline;
+
+}
+.pc-audio-player {
+    height: 1em;
+}
+.pc-audio-player-recording {
+}
+.pc-audio-player-label {
     display: inline-block;
+    font-size: 1.5em;
+    padding-left: .5em;
 }
 .pc-graph {
     width: 500px;
@@ -16,7 +30,7 @@
     width: 1000000px
 }
 
-.pc-recording-controls {
+.pc-graph-labels {
     float: left;
 }
 
@@ -27,6 +41,13 @@
     color: black;
     background-color: transparent;
 }
+.pc-recording-phrase {
+    display: inline-block;
+    margin: 0em;
+    padding: 0em;
+    cursor: pointer;
+}
+
 
 
 .pc-line-empty {
@@ -44,7 +65,7 @@
 .pc-recording-control,
 .pc-graph
 {
-    font-size: 1.5em;
+    font-size: 1.2em;
 }
 
 .pc-recording-control
@@ -92,11 +113,18 @@
 .pc-recording-graph .pc-correlation-4of5 {color: hsl(  0,  0%, 25%); }
 
 
+.pc-recording-phrase:hover div.pc-word {
+    background-color: red;
+    color: red;
+    border-color: red;
+}
+
 .pc-play-button {
     display: inline-block;
     width: 2em;
     height: 1em;
     overflow-y: hidden;
+    cursor: pointer;
 }
 
 

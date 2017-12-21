@@ -20,9 +20,13 @@
     //the container for the poem
     var $poemContainer;
 
+    //object containing recordings keyed on recording name
     var recordings;
 
     var selectedRecordings;
+
+    //holds the most recent timeout call for cancelling
+    var timeOut;
 
     /**
      * Parse CSV data into a 2 dimensional array
@@ -192,12 +196,16 @@
 
     };
 
+
+    /**
+     * Process the data which has been converted from CSV
+     */
     this.processData = function()
     {
         poemPhrases = {};
+        poemLines = {};
         poemWords = {};
         recordings = {};
-        console.log(poemPhrasesArray);
         for(var i=1; i< poemPhrasesArray.length; i++ ) {
 
 
@@ -230,11 +238,13 @@
             //save the phrase
             if(typeof(poemPhrases[phrase.id]) === 'undefined') {
                 poemPhrases[phrase.id] = {
-                    'startLine': phrase.startLine,
-                    'startWord': phrase.startWord,
-                    'endLine': phrase.endLine,
-                    'endWord': phrase.endWord,
-                    'recordings': [phrase.recordingName]
+                    'id':         phrase.id,
+                    'startLine':  phrase.startLine,
+                    'startWord':  phrase.startWord,
+                    'endLine':    phrase.endLine,
+                    'endWord':    phrase.endWord,
+                    'recordings': [phrase.recordingName],
+                    'words': []
                 }
             }
             else {
@@ -249,7 +259,6 @@
 
         //parse the lines
         numLines = poemTextArray.length;
-        poemLines = {};
         for(var lineIndex=0; lineIndex<poemTextArray.length; lineIndex++) {
             var line = {
                 'lineNum': lineIndex+1,
@@ -286,6 +295,7 @@
         //go get the words in the phrase
         for(var phraseIndex in poemPhrases) {
             poemPhrases[phraseIndex].numWords = getNumWordsInPhrase(poemPhrases[phraseIndex]);
+            poemPhrases[phraseIndex].words = getWordsInPhrase(poemPhrases[phraseIndex]);
         }
 
         this.matchWordsToPhrases();
@@ -339,6 +349,25 @@
         return numWords;
     }
 
+    this.getWordsInPhrase = function(phrase) {
+        var words;
+        words = [];
+        for(var lineNum = phrase.startLine; lineNum <= phrase.endLine; lineNum++) {
+            var line = poemLines[lineNum.toString()];
+            for(var wordIndex in line.words) {
+                var word = line.words[wordIndex];
+
+                //doesn't count -- before start word
+                if(lineNum === phrase.startLine && word.wordNum < phrase.startWord) continue;
+                //doesn't count -- after end word
+                if(lineNum === phrase.endLine && word.wordNum > phrase.endWord) continue;
+
+                words.push(word.wordId);
+            }
+        }
+        return words;
+    }
+
     this.checkLineEmpty = function(wordArray)
     {
         for(var i = 0; i < wordArray.length; i++) {
@@ -349,7 +378,7 @@
 
 
     this.createElements = function() {
-        var $formatted, $graph, $graphWords, $recordingControls, $audioViewer;
+        var $formatted, $graph, $graphWords, $graphLabels, $audioViewer;
 
         //set up format to contain formatted poem text
         $formatted = $('<div class="pc-formatted"/>');
@@ -364,29 +393,18 @@
         $graph.append($graphWords);
 
         //set up the recording controls
-        $recordingControls = $('<div class="pc-recording-controls"/>');
-        $recordingControls.append('<div class="pc-recording-control">Summary</div>');
+        $graphLabels = $('<div class="pc-graph-labels"/>');
+        $graphLabels.append('<div class="pc-recording-control">Summary</div>');
 
 
-        $audioViewer = $('<div class="pc-audio-viewer"></div>');
+        $audioViewer = $('<div class="pc-audio-player"></div>');
 
         //set up a line for each recording
         var $graphRecordingWords = {};
         for(var recordingName in recordings) {
-            $graphRecordingWords[recordingName] = $('<div class="pc-recording-graph"/>');
-            $graphRecordingWords[recordingName].attr('data-recording-name', recordingName);
-            $graph.append($graphRecordingWords[recordingName]);
 
             var $recordingControl = $('<div class="pc-recording-control"></div>');
 
-            var $audio = $('<audio/>');
-            $audio.attr('controls', 'controls');
-            $audio.attr('src', recordings[recordingName].url);
-            $audio.attr('data-recording-name', recordingName);
-            var $audioDiv = $('<div><div class="pc-audio-viewer-label">' + recordingName + '</div></div>');
-            $audioDiv.prepend($audio);
-
-            $audioViewer.append($audioDiv);
 
             var $playButton = $('<div class="pc-play-button pc-paused">&#9654;</div>');
             $playButton.attr('data-recording-name',recordingName);
@@ -394,7 +412,10 @@
 
             $recordingControl.append('<div class="pc-recording-label">' + recordingName + '</div>');
 
-            $recordingControls.append($recordingControl);
+            $graphLabels.append($recordingControl);
+
+            $graph.append(this.createRecordingGraphElement(recordingName));
+            $audioViewer.append(this.createAudioPlayerRecordingElement(recordingName));
         }
 
         //set up the recording labels
@@ -416,23 +437,6 @@
                         $word = $("<div class='pc-word'/>");
                         $word.html(word.text);
                         $word.attr('data-word-id', word.wordId);
-
-                        for (var recordingName in recordings) {
-                            var $recordingWord = $word.clone();
-                            $recordingWord.addClass(getRecordingCorrelationClass(recordingName, word));
-                            var phrase = this.getRecordingWordPhrase(recordingName, word);
-                            if(phrase === null) {
-                                $recordingWord.addClass('pc-no-phrase');
-                            }
-                            if(phrase && word.lineNum === phrase.startLine && word.wordNum === phrase.startWord) {
-                                $recordingWord.addClass('pc-phrase-first-word');
-                            }
-                            if(phrase && word.lineNum === phrase.endLine && word.wordNum === phrase.endWord) {
-                                $recordingWord.addClass('pc-phrase-last-word');
-                            }
-                            $graphRecordingWords[recordingName].append($recordingWord);
-                        }
-
                         $word.addClass(getCorrelationClass(word));
                         $word.attr('data-word-id', word.wordId);
                         if (word.lastOfPhrase) {
@@ -451,37 +455,84 @@
         }
 
         $poemControlContainer = ($('<div class="pc-controls-container"/>'))
-        $poemControlContainer.append($recordingControls);
-        $poemContainer.append($audioViewer);
+        $poemControlContainer.append($graphLabels);
         $poemContainer.append($poemControlContainer);
         $poemContainer.append($graph);
+        $poemContainer.append($audioViewer);
         $poemContainer.append('<h2>Text With Phrase Correlation</h2>');
         $poemContainer.append($formatted);
     };
 
-    this.getBackgroundColor = function(word) {
-        var percentage, hue, saturation, lightness;
-        if(Object.keys(recordings) == 1) {
-            percentage = 0;
+    /**
+     * Function to create the phrase graph line for an individual recording
+     * @param recordingName
+     * @returns {*|HTMLElement}
+     */
+    this.createRecordingGraphElement = function(recordingName)
+    {
+        var $recordingGraph, $phrase, $word, recording, phrase, word;
+
+        $recordingGraph = $('<div class="pc-recording-graph"/>');
+        $recordingGraph.attr('data-recording-name', recordingName);
+
+        recording = recordings[recordingName];
+        for(phraseId in recording.phrases) {
+            phrase = poemPhrases[phraseId];
+            $phrase = $('<div class="pc-recording-phrase"></div>');
+            $phrase.attr('data-phrase-id', phraseId);
+            $phrase.attr('data-recording-name', recordingName);
+
+            for(var i in phrase.words) {
+                word = poemWords[phrase.words[i]];
+                $word = $("<div class='pc-word'/>");
+                $word.html(word.text);
+                $word.attr('data-word-id', word.wordId);
+                $word.addClass(getRecordingCorrelationClass(recordingName, word));
+                if(word.lineNum === phrase.startLine && word.wordNum === phrase.startWord) {
+                    $word.addClass('pc-phrase-first-word');
+                }
+                if(word.lineNum === phrase.endLine && word.wordNum === phrase.endWord) {
+                    $word.addClass('pc-phrase-last-word');
+                }
+                $phrase.append($word);
+            }
+
+            $recordingGraph.append($phrase);
         }
-        else {
-            percentage = (word.maxCorrelated - 1)/ (Object.keys(recordings).length - 1);
-        }
-
-        hue = 360 * percentage;
-
-        saturation = 100 *(1 - percentage);
-        saturation = 75;
-
-        lightness = 100 * (1-percentage);
 
 
-        var brightness = Math.floor(255 - percentage * 254);
+        return $recordingGraph
+    }
 
-        var color = 'hsl(' + hue + ', ' + saturation + '%,' + lightness +'%)';
-        return color;
-    };
 
+    /**
+     * Function to create a recording audio element
+     * @param recordingName
+     */
+    this.createAudioPlayerRecordingElement = function(recordingName)
+    {
+        var $audio, $audioDiv;
+        //create an audio div container
+        $audioDiv = $('<div class="pc-audio-player-recording"></div>');
+        $audioDiv.attr('data-recording-name', recordingName);
+        $audioDiv.append('<div class="pc-audio-player-label">Playing: ' + recordingName + '</div>');
+        $audioDiv.hide();
+
+        //create the audio element
+        $audio = $('<audio/>');
+        $audio.attr('controls', 'controls');
+        $audio.attr('src', recordings[recordingName].url);
+        $audio.attr('data-recording-name', recordingName);
+
+        $audioDiv.prepend($audio);
+
+        return $audioDiv;
+    }
+    /**
+     * Function to get the correlation class of a word
+     * @param word
+     * @returns String
+     */
     this.getCorrelationClass = function(word) {
         if(word.maxCorrelated === 1) {
             return 'pc-correlation-none';
@@ -494,6 +545,12 @@
         }
     }
 
+    /**
+     * Returns the class name representing the correleation of the given word for the given recording
+     * @param recordingName
+     * @param word
+     * @returns {*}
+     */
     this.getRecordingCorrelationClass = function(recordingName, word) {
         var phrase = this.getRecordingWordPhrase(recordingName, word);
         if(phrase === null) return 'pc-correlation-none';
@@ -526,52 +583,105 @@
             }
         }
         return null;
-    }
+    };
 
-
-    this.getTextColor = function(word) {
-        var percentage, color;
-
-        percentage = (word.maxCorrelated - 1)/ (Object.keys(recordings).length - 1);
-
-        if(percentage < .5) {
-            color = "black";
+    /**
+     * Convert time to seconds
+     * @param time
+     * @returns {*}
+     */
+    this.timeToSeconds = function(time)
+    {
+        if(toString.call(time) == '[object Number]') {
+            return time;
         }
-        else {
-            color = "white";
+        if(time.indexOf(":") > -1) {
+            var timeParts = time.split(":");
+            return parseFloat(timeParts[0]) * 60 + parseFloat(timeParts[1]);
         }
+        return parseFloat(time);
+    };
 
-        return color;
+    /**
+     *
+     * @param recordingName
+     * @param startTime
+     * @param endTime
+     */
+    this.play = function(recordingName, startTime, endTime)
+    {
+        var $audio, $playButton, clipDuration;
+        this.pauseAll();
+        $('.pc-audio-player-recording').hide();
 
+        $playButton = $('.pc-play-button[data-recording-name="' + recordingName + '"]');
+        $playButton.addClass('pc-playing').html('&#10073;&#10073;');
+
+        //show the audio div
+        $('.pc-audio-player-recording[data-recording-name="' + recordingName +'"]').show();
+
+        $audio = $('audio[data-recording-name="' + recordingName + '"]');
+        if(startTime) {
+            $audio[0].currentTime = this.timeToSeconds(startTime);
+        }
+        if(endTime && this.timeToSeconds(endTime) > 0) {
+            clipDuration = 1000 * (this.timeToSeconds(endTime) - this.timeToSeconds(startTime));
+
+            //todo Create a functio to make sure this hasn't been cancelled
+            this.timeOut = setTimeout(this.pauseAll, clipDuration);
+        }
+        $audio[0].play();
     };
 
 
-    var wordClicked = function(wordId) {
+
+    /**
+     * Pause all tracks
+     */
+    this.pauseAll = function()
+    {
+        clearTimeout(this.timeOut);
+        $('.pc-play-button')
+            .addClass('pc-paused')
+            .removeClass('pc-playing')
+            .html('&#9654;');
+        $('audio').each(function() {
+            $(this)[0].pause();
+        })
+
+    }
+    this.playButtonClicked = function(recordingName) {
+        var $audio = $('audio[data-recording-name="' + recordingName + '"]');
+        if($audio.prop('paused')) {
+            this.play(recordingName);
+        }
+        else {
+            this.pauseAll();
+        }
+
+    };
+
+    /**
+     * Function to run when th
+     * @param wordId
+     */
+    this.graphPhraseClicked = function(phraseId, recordingName) {
+        var startTime = recordings[recordingName].phrases[phraseId].startTime;
+        var endTime = recordings[recordingName].phrases[phraseId].endTime;
+
+        this.play(recordingName, startTime, endTime);
+    }
+
+    /**
+     * Function to run when a word is clicked on
+     * @param wordId
+     */
+    var formattedWordClicked = function(wordId) {
+        //find where
         $summaryWord =  $('.pc-graph-words div.pc-word[data-word-id="' + wordId + '"]');
         $('.pc-graph').scrollLeft($summaryWord.position().left-324);
 
     };
-
-    this.playButtonClicked = function(recordingName) {
-        console.log(recordingName);
-        var $audio = $('audio[data-recording-name="' + recordingName + '"]');
-        var $playButton = $('.pc-play-button[data-recording-name="' + recordingName + '"]');
-        if($audio.prop('paused')) {
-            $audio[0].play();
-            $audio.show();
-            $playButton.removeClass('pc-paused');
-            $playButton.addClass('pc-playing');
-            $playButton.html('&#10073;&#10073;');
-        }
-        else {
-            $audio[0].pause();
-            $playButton.removeClass('pc-playing');
-            $playButton.addClass('pc-paused');
-            $playButton.html('&#9654;');
-        }
-
-    };
-
 
     /**
      * Initialize the correlator
@@ -582,18 +692,25 @@
      */
     var init = function(options)
     {
+        this.timeOut = -1;
         parsePoemTextFromCsvUrl(options.poemTextCsvUrl);
         parsePoemPhrasesFromCsvUrl(options.poemPhrasesCsvUrl);
         $poemContainer = options.poemContainer;
 
         //add word click listener
-        $poemContainer.on('click', '.pc-word', function() {
-            wordClicked($(this).attr('data-word-id'));
+        $poemContainer.on('click', '.pc-formatted .pc-word', function() {
+            formattedWordClicked($(this).attr('data-word-id'));
         });
 
         $poemContainer.on('click', '.pc-play-button', function() {
             playButtonClicked($(this).attr('data-recording-name'));
+        });
+
+        $poemContainer.on('click', '.pc-recording-phrase', function() {
+            var $this = $(this);
+            graphPhraseClicked($this.attr('data-phrase-id'), $this.attr('data-recording-name'));
         })
+
     };
 
     window.phraseCorrelator = {
