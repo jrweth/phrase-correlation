@@ -13,6 +13,7 @@
         flex-wrap: nowrap;
         width: 100%;
         justify-content: flex-end;
+        font-size: 16px;
     }
 }
 
@@ -54,7 +55,13 @@
     width: 100000000px;
 }
 
+.pc-tempo {
+    position: absolute;
+    top:0;
+    width: 100%;
+    text-align: center;
 
+}
 audio.pc-audio-element {
     display: block;
     float:left;
@@ -86,6 +93,7 @@ audio.pc-audio-element {
     margin: 0em;
     padding: 0em;
     cursor: pointer;
+    position: relative;
 }
 
 
@@ -146,16 +154,19 @@ audio.pc-audio-element {
 
 
 /* match the foreground of the text to the backgroud color */
-.pc-recording-graph .pc-correlation-none { color: white}
-.pc-recording-graph .pc-correlation-all  { color: black}
+.pc-recording-graph .pc-word.pc-correlation-none { color: white}
+.pc-recording-graph .pc-word.pc-correlation-all  { color: black}
 
-.pc-recording-graph .pc-correlation-2of3 {color: hsl(  0,  0%, 50%); }
-.pc-recording-graph .pc-correlation-2of4 {color: hsl(  0,  0%, 66%); }
-.pc-recording-graph .pc-correlation-3of4 {color: hsl(  0,  0%, 33%); }
-.pc-recording-graph .pc-correlation-2of5 {color: hsl(  0,  0%, 75%); }
-.pc-recording-graph .pc-correlation-3of5 {color: hsl(  0,  0%, 50%); }
-.pc-recording-graph .pc-correlation-4of5 {color: hsl(  0,  0%, 25%); }
+.pc-recording-graph .pc-word.pc-correlation-2of3 {color: hsl(  0,  0%, 50%); }
+.pc-recording-graph .pc-word.pc-correlation-2of4 {color: hsl(  0,  0%, 66%); }
+.pc-recording-graph .pc-word.pc-correlation-3of4 {color: hsl(  0,  0%, 33%); }
+.pc-recording-graph .pc-word.pc-correlation-2of5 {color: hsl(  0,  0%, 75%); }
+.pc-recording-graph .pc-word.pc-correlation-3of5 {color: hsl(  0,  0%, 50%); }
+.pc-recording-graph .pc-word.pc-correlation-4of5 {color: hsl(  0,  0%, 25%); }
 
+.pc-recording-phrase {
+    background-color: transparent;
+}
 
 .pc-recording-phrase:hover div.pc-word {
     background-color: red;

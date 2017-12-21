@@ -233,7 +233,8 @@
 
             recordings[phrase.recordingName].phrases[phrase.id] = {
                 startTime: phrase.startTime,
-                endTime: phrase.endTime
+                endTime: phrase.endTime,
+                duration: this.timeToSeconds(phrase.endTime) - this.timeToSeconds(phrase.startTime)
             };
 
             //save the phrase
@@ -470,7 +471,7 @@
      */
     this.createRecordingGraphElement = function(recordingName)
     {
-        var $recordingGraph, $phrase, $word, recording, phrase, word;
+        var $recordingGraph, $phrase, $word, recording, phrase, word, tempo, duration;
 
         $recordingGraph = $('<div class="pc-recording-graph"/>');
         $recordingGraph.attr('data-recording-name', recordingName);
@@ -481,6 +482,7 @@
             $phrase = $('<div class="pc-recording-phrase"></div>');
             $phrase.attr('data-phrase-id', phraseId);
             $phrase.attr('data-recording-name', recordingName);
+            $phrase.addClass(this.getRecordingPhraseCorrelationClass(recordingName, phraseId))
 
             for(var i in phrase.words) {
                 word = poemWords[phrase.words[i]];
@@ -497,6 +499,9 @@
                 $phrase.append($word);
             }
 
+            console.log(recording.phrases[phraseId].duration);
+            tempo = Math.round(10 *poemPhrases[phraseId].numWords / recording.phrases[phraseId].duration) /10;
+            $phrase.append('<div class="pc-tempo">t:' + tempo.toString() + '</div>');
             $recordingGraph.append($phrase);
         }
 
@@ -553,6 +558,13 @@
      */
     this.getRecordingCorrelationClass = function(recordingName, word) {
         var phrase = this.getRecordingWordPhrase(recordingName, word);
+        return this.getRecordingPhraseCorrelationClass(recordingName, phrase.id);
+
+    }
+
+    this.getRecordingPhraseCorrelationClass = function(recordingName, phraseId)
+    {
+        var phrase = poemPhrases[phraseId];
         if(phrase === null) return 'pc-correlation-none';
 
         var correlated = phrase.recordings.length;
@@ -565,7 +577,6 @@
         else {
             return 'pc-correlation-' + correlated.toString() + 'of' + selectedRecordings.length.toString();
         }
-
     }
 
     /**
@@ -682,7 +693,7 @@
      * Function to run when a word is clicked on
      * @param wordId
      */
-    var formattedWordClicked = function(wordId) {
+    this.formattedWordClicked = function(wordId) {
         var $firstWord, $summaryWord, $graph;
 
         $firstWord = $('.pc-graph-words').first();
@@ -702,6 +713,7 @@
         $graph = $('.pc-graph');
         $graph.width($(window).width() - $graph.offset().left);
 
+        $
         //$('.pc-graph').width($(window).width() - $('.pc-graph').offset().left);
     }
     /**
