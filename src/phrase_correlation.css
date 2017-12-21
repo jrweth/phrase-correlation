@@ -1,24 +1,34 @@
 
 /* outermost div - js sets height to fit the remainder of page */
-.pc-container
-{
+
+.pc-container {
     display: flex;
-    flex-direction: row-reverse;
-    flex-wrap: nowrap;
+    flex-direction: column;
     width: 100%;
-    justify-content: flex-end;
+}
+
+@media(min-width: 40em) {
+    .pc-container {
+        display: flex;
+        flex-direction: row-reverse;
+        flex-wrap: nowrap;
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
 
 /* formatted poem text */
 .pc-formatted {
     flex-grow: 1;
     flex-shrink: 0;
+    height: 100%;
     overflow-y: scroll;
 }
 
 /* recording broken down */
 .pc-info {
     flex-grow: 2;
+    flex-shrink: 0;
     display: flex;
     flex-flow: column nowrap;
 }
@@ -53,10 +63,12 @@ audio.pc-audio-element {
 }
 
 .pc-audio-players {
-    height: 1em;
+    height: 2em;
 }
 
 .pc-audio-player-recording {
+    display:flex;
+    flex-flow: row nowrap;
 }
 
 .pc-audio-player-label {
