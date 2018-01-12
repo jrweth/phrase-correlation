@@ -1,32 +1,32 @@
 (function(window, $) {
     //the poem text array derived from the csv file
-    var poemTextArray;
+    this.poemTextArray = null;
 
     //the poem phrases array dervied from the csv file
-    var poemPhrasesArray;
+    this.poemPhrasesArray = null;
 
     //the poem phrases summarized by distinct phrase
-    var poemPhrases;
+    this.poemPhrases = null;
 
     //the poem lines
-    var poemLines;
+    this.poemLines = null;
 
     //the poem words
-    var poemWords;
+    this.poemWords = null;
 
     //the number of lines in the poem
-    var numLines;
+    this.numLines = null;
 
     //the container for the poem
-    var $poemContainer;
+    this.$poemContainer = null;
 
     //object containing recordings keyed on recording name
-    var recordings;
+    this.recordings = null;
 
-    var selectedRecordings;
+    this.selectedRecordings = null;
 
     //holds the most recent timeout call for cancelling
-    var timeOut;
+    this.timeOut = null;
 
     /**
      * Parse CSV data into a 2 dimensional array
@@ -180,12 +180,14 @@
 
         //sort the matched phrases from most correleted to least correlated
         matchedPhrases.sort(function(phraseId1, phraseId2) {
+            var phrase1NumRecordings = this.getPhraseNumSelectedRecordings(phraseId1);
+            var phrase2NumRecordings = this.getPhraseNumSelectedRecordings(phraseId2);
             //phrase2 more correlated
-            if(poemPhrases[phraseId2].recordings.length > poemPhrases[phraseId1].recordings.length) {
+            if(phrase2NumRecordings > phrase1NumRecordings) {
                 return 1;
             }
             //phrase1  more correlated
-            else if(poemPhrases[phraseId2].recordings.length < poemPhrases[phraseId1].recordings.length) {
+            else if(phrase2NumRecordings < phrase1NumRecordings) {
                 return -1;
             }
             //most be equal -- go with the shortest phrase
@@ -197,6 +199,15 @@
 
     };
 
+    /**
+     * Get the number of selected recordings in the phrase
+     * @param phraseId
+     * @returns {number}
+     */
+    this.getPhraseNumSelectedRecordings = function(phraseId) {
+        var phrase = this.poemPhrases[phraseId];
+        return this.filterSelectedRecordings(phrase.recordings).length;
+    };
 
     /**
      * Process the data which has been converted from CSV
@@ -321,7 +332,7 @@
                 }
                 else {
                     var maxPhrase = poemPhrases[matchedPhrases[0]];
-                    poemLines[lineNum].words[wordNum].maxCorrelated = maxPhrase.recordings.length;
+                    poemLines[lineNum].words[wordNum].maxCorrelated = this.filterSelectedRecordings(maxPhrase.recordings).length;
                     poemLines[lineNum].words[wordNum].firstOfPhrase = word.lineNum === maxPhrase.startLine && word.wordNum === maxPhrase.startWord;
                     poemLines[lineNum].words[wordNum].lastOfPhrase  = word.lineNum === maxPhrase.endLine && word.wordNum === maxPhrase.endWord;
                 }
@@ -377,7 +388,7 @@
 
 
     this.createElements = function() {
-        var $formatted, $graph, $graphWords, $graphLabels, $graphContainer, $audioPlayers, $poemInfo;
+        var $formatted, $graph, $graphWords, $graphFixedColumn, $graphContainer, $audioPlayers, $poemInfo;
 
         $poemContainer.addClass('pc-container');
         //set up format to contain formatted poem text
@@ -392,8 +403,8 @@
         $graph.append($graphWords);
 
         //set up the recording controls
-        $graphLabels = $('<div class="pc-graph-labels"/>');
-        $graphLabels.append('<div class="pc-graph-label">Summary</div>');
+        $graphFixedColumn = $('<div class="pc-graph-labels"/>');
+        $graphFixedColumn.append('<div class="pc-graph-label">Summary</div>');
 
 
         $audioPlayers = $('<div class="pc-audio-players"></div>');
@@ -402,17 +413,7 @@
         var $graphRecordingWords = {};
         for(var recordingName in recordings) {
 
-            var $recordingControl = $('<div class="pc-graph-label"></div>');
-
-
-            var $playButton = $('<div class="pc-play-button pc-paused">&#9654;</div>');
-            $playButton.attr('data-recording-name',recordingName);
-            $recordingControl.append($playButton);
-
-            $recordingControl.append('<div class="pc-recording-label">' + recordingName + '</div>');
-
-            $graphLabels.append($recordingControl);
-
+            $graphFixedColumn.append(this.createGraphRecordingFixedColumn(recordingName));
             $graph.append(this.createRecordingGraphElement(recordingName));
             $audioPlayers.append(this.createAudioPlayerRecordingElement(recordingName));
         }
@@ -455,15 +456,48 @@
 
         $poemInfo = ($('<div class="pc-info"/>'));
         $graphContainer = ($('<div class="pc-graph-container"></div>'));
-        $graphContainer.append($graphLabels);
+        $graphContainer.append($graphFixedColumn);
         $graphContainer.append($graph);
         $poemInfo.append($graphContainer);
         $poemInfo.append('<div class="pc-play-options"><input type="checkbox" class="pc-play-option-pause" />Pause after selected phrase played</div>');
         $poemInfo.append($audioPlayers);
         $poemContainer.append($poemInfo);
         $poemContainer.append($formatted);
+        this.adjustGraphSize();
     };
 
+    /**
+     * Adjust the graph size so that it just contains the
+     */
+    this.adjustGraphSize = function() {
+        var $lastWord = $('.pc-graph-words div.pc-phrase-last-word:last-child').first();
+        $('.pc-graph-words, .pc-recording-graph').css('width', $lastWord.position().left);
+    };
+
+    /**
+     * Create the fixed column entry for the recording (label, play button, and inclusion toggle)
+     * @param recordingName
+     * @returns {*|jQuery|HTMLElement}
+     */
+    this.createGraphRecordingFixedColumn = function(recordingName)
+    {
+        var $fixedColumn    = $('<div class="pc-graph-label"></div>');
+        var $includeToggle  = $('<input type="checkbox" class="pc-recording-toggle">');
+        var $playButton     = $('<div class="pc-play-button pc-paused">&#9654;</div>');
+        var $recordingLabel = $('<div class="pc-recording-label">' + recordingName + '</div>');
+
+        $playButton.attr('data-recording-name',recordingName);
+
+        $includeToggle.attr('data-recording-name',recordingName);
+        $includeToggle.prop('checked', true);
+        $includeToggle.attr('title', 'include in phrase correlation parsing');
+
+        $fixedColumn.append($playButton);
+        $fixedColumn.append($includeToggle);
+        $fixedColumn.append($recordingLabel);
+
+        return $fixedColumn;
+    }
     /**
      * Function to create the phrase graph line for an individual recording
      * @param recordingName
@@ -538,6 +572,9 @@
      * @returns String
      */
     this.getCorrelationClass = function(word) {
+        if(this.selectedRecordings.length === 0) {
+            return 'pc-correlation-none';
+        }
         if(word.maxCorrelated === 1) {
             return 'pc-correlation-none';
         }
@@ -561,12 +598,24 @@
 
     }
 
+    /**
+     * Get the correlation class for the recording phrase
+     * @param recordingName
+     * @param phraseId
+     * @returns {*}
+     */
     this.getRecordingPhraseCorrelationClass = function(recordingName, phraseId)
     {
+        if(this.selectedRecordings.indexOf(recordingName) === -1) {
+            return 'pc-correlation-not-selected';
+        }
         var phrase = poemPhrases[phraseId];
         if(phrase === null) return 'pc-correlation-none';
 
-        var correlated = phrase.recordings.length;
+        var correlated = 0;
+        for(var i in phrase.recordings) {
+            if(this.selectedRecordings.indexOf(phrase.recordings[i]) > -1) correlated++;
+        }
         if(correlated === 1) {
             return 'pc-correlation-none';
         }
@@ -576,7 +625,20 @@
         else {
             return 'pc-correlation-' + correlated.toString() + 'of' + selectedRecordings.length.toString();
         }
-    }
+    };
+
+    /**
+     * Get the current correlation class on an element
+     * @param $element
+     * @returns {*}
+     */
+    this.getCurrentCorrelationClass = function($element) {
+        var currentClasses = $element.attr('class').split(/\s+/);
+        for(var i in currentClasses) {
+            if(currentClasses[i].indexOf('pc-correlation') > -1) return currentClasses[i];
+        }
+        return null;
+    };
 
     /**
      * Get the phrase that the specified word in the specified recording belongs to
@@ -703,6 +765,76 @@
 
     };
 
+    /**
+     * Update the recordings that are selected and all of the various correlation classes
+     */
+    this.updateRecordingSelection = function() {
+        var that = this;
+        this.selectedRecordings = [];
+
+        //update which recordings are selected
+        $('.pc-recording-toggle').each(function(){
+            var $this = $(this);
+            if($this.prop('checked')) {
+                that.selectedRecordings.push($this.attr('data-recording-name'));
+            }
+        });
+
+        //update the classes for each element
+        $('.pc-recording-phrase').each(function() {
+            var $phrase       = $(this);
+            var phraseId      = $phrase.attr('data-phrase-id');
+            var recordingName = $phrase.attr('data-recording-name');
+            var currentCorrelationClass = that.getCurrentCorrelationClass($phrase);
+            var correlationClass = that.getRecordingPhraseCorrelationClass(recordingName, phraseId);
+            if(currentCorrelationClass !== correlationClass) {
+                $phrase.removeClass(currentCorrelationClass).addClass(correlationClass);
+                $phrase.children().removeClass(currentCorrelationClass).addClass(correlationClass);
+            }
+
+        });
+
+        this.updateWordClasses();
+
+    };
+
+    this.updateWordClasses = function() {
+        var that = this;
+        this.matchWordsToPhrases();
+        $('.pc-graph-words .pc-word, .pc-formatted .pc-word').each(function() {
+            var $word = $(this);
+            var wordId = $word.attr('data-word-id');
+            var word = that.poemWords[wordId];
+            var currentCorrelationClass = that.getCurrentCorrelationClass($word);
+
+            $word.removeClass(currentCorrelationClass)
+                .removeClass('pc-phrase-first-word')
+                .removeClass('pc-phrase-last-word');
+
+            $word.addClass(getCorrelationClass(word));
+            $word.attr('data-word-id', word.wordId);
+            if (word.lastOfPhrase) {
+                $word.addClass('pc-phrase-last-word');
+            }
+            if (word.firstOfPhrase) {
+                $word.addClass('pc-phrase-first-word');
+            }
+        });
+    }
+
+    /**
+     * Quick helper function to filter a recordings list to be just the selected recordings
+     * @param recordings
+     * @returns {Array}
+     */
+    this.filterSelectedRecordings = function(recordings) {
+        var filtered = [];
+        for(var i in recordings) {
+            if(this.selectedRecordings.indexOf(recordings[i]) > -1) filtered.push(recordings[i]);
+        }
+        return filtered;
+    };
+
     this.onResize = function() {
         var $graph;
         //set the poem container to fill up the remainder of the screen
@@ -742,6 +874,11 @@
             var $this = $(this);
             graphPhraseClicked($this.attr('data-phrase-id'), $this.attr('data-recording-name'));
         })
+
+        $poemContainer.on('click', '.pc-recording-toggle', function() {
+            var $this = $(this);
+            updateRecordingSelection();
+        });
 
 
         $(window).resize(function() {onResize()});

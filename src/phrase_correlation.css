@@ -58,8 +58,11 @@
 .pc-tempo {
     position: absolute;
     top:0;
-    width: 100%;
+    width: 90%;
+    margin-left: 5%;
+    margin-right: 5%;
     text-align: center;
+    background-color: transparent;
 
 }
 audio.pc-audio-element {
@@ -104,11 +107,6 @@ audio.pc-audio-element {
 .pc-line {
 
 }
-.pc-word {
-    display: inline-block;
-    border-width: 0em 0.15em;
-    border-style: solid;
-}
 
 .pc-formatted .pc-word {
     cursor: pointer;
@@ -141,6 +139,7 @@ audio.pc-audio-element {
 
 .pc-correlation-none {color: black; background-color: white; border-color: white }
 .pc-correlation-all  {color: white; background-color: black; border-color: black }
+.pc-correlation-not-selected {color: black; background-color: transparent; border-color:transparent}
 
 .pc-correlation-2of3 {color: black; background-color: hsl(  0,  0%, 50%); border-color: hsl(  0, 0%, 50%) }
 
@@ -156,6 +155,7 @@ audio.pc-audio-element {
 /* match the foreground of the text to the backgroud color */
 .pc-recording-graph .pc-word.pc-correlation-none { color: white}
 .pc-recording-graph .pc-word.pc-correlation-all  { color: black}
+.pc-recording-graph .pc-word.pc-correlation-not-selected  { color: transparent}
 
 .pc-recording-graph .pc-word.pc-correlation-2of3 {color: hsl(  0,  0%, 50%); }
 .pc-recording-graph .pc-word.pc-correlation-2of4 {color: hsl(  0,  0%, 66%); }
@@ -193,4 +193,11 @@ audio.pc-audio-element {
     border-top-left-radius: .5em;
     border-bottom-left-radius: .5em;
     border-left-color: red;
+}
+
+.pc-word {
+    display: inline-block;
+    border-width: 0em 0.15em;
+    border-style: solid;
+    padding: .1em 0em;
 }
