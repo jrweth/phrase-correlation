@@ -1,4 +1,9 @@
 (function(window, $) {
+    var self = this;
+
+    //thw recording array
+    this.recordingArray = null;
+
     //the poem text array derived from the csv file
     this.poemTextArray = null;
 
@@ -118,6 +123,14 @@
         return ( arrData );
     };
 
+    this.parseRecordingsFromCsvUrl = function(csvFileUrl) {
+        $.ajax(csvFileUrl)
+            .done(function(response) {
+                recordingArray = CSVToArray(response);
+                checkFinished();
+            });
+    }
+
     /**
      * Go get the poem text and parse into an array - when done check if we are ready to run correlation
      * @param csvFileUrl
@@ -138,6 +151,10 @@
         $.ajax(csvFileUrl)
             .done(function(response) {
                 poemPhrasesArray = CSVToArray(response);
+                //check to make sure last line has data in it
+                if(poemPhrasesArray[poemPhrasesArray.length -1].length < 6) {
+                    poemPhrasesArray.pop();
+                }
                 checkFinished();
             });
     };
@@ -148,7 +165,7 @@
      */
     this.checkFinished = function()
     {
-        if(poemPhrasesArray && poemTextArray) {
+        if(poemPhrasesArray && poemTextArray && recordingArray) {
             processData();
             createElements();
             onResize();
@@ -218,28 +235,24 @@
         poemLines = {};
         poemWords = {};
         recordings = {};
+        this.processRecordings();
         for(var i=1; i< poemPhrasesArray.length; i++ ) {
 
 
             var phrase = {
                 'recordingName': poemPhrasesArray[i][0],
-                'recordingUrl': poemPhrasesArray[i][1],
-                'startTime': poemPhrasesArray[i][2],
-                'endTime': poemPhrasesArray[i][3],
-                'startLine': parseInt(poemPhrasesArray[i][4]),
-                'startWord': parseInt(poemPhrasesArray[i][5]),
-                'endLine': parseInt(poemPhrasesArray[i][6]),
-                'endWord': parseInt(poemPhrasesArray[i][7])
+                'startTime':     poemPhrasesArray[i][1],
+                'endTime':       poemPhrasesArray[i][2],
+                'startLine':     parseInt(poemPhrasesArray[i][3]),
+                'startWord':     parseInt(poemPhrasesArray[i][4]),
+                'endLine':       parseInt(poemPhrasesArray[i][5]),
+                'endWord':       parseInt(poemPhrasesArray[i][6])
             }
             phrase.id = phrase.startLine + '.' + phrase.startWord + '-' + phrase.endLine + '.' + phrase.endWord;
 
             //save the recording
             if(typeof(recordings[phrase.recordingName]) === 'undefined') {
-                recordings[phrase.recordingName] = {
-                    name: phrase.recordingName,
-                    url: phrase.recordingUrl,
-                    phrases: {}
-                };
+                console.log(phrase.recordingName + ' not found in recording list');
             }
 
             recordings[phrase.recordingName].phrases[phrase.id] = {
@@ -312,6 +325,25 @@
         }
 
         this.matchWordsToPhrases();
+    }
+
+    /**
+     * process the recording array from csv file
+     */
+    this.processRecordings = function () {
+        for (var i = 1; i < this.recordingArray.length; i++) {
+            var rec = this.recordingArray[i];
+            this.recordings[rec[0]] = {
+                name:          rec[0],
+                url:           rec[1],
+                nameLong:      rec[2],
+                date:          rec[3],
+                media:         rec[4],
+                recordingType: rec[5],
+                notes:         rec[6],
+                phrases: {}
+            };
+        }
     }
 
     /**
@@ -389,6 +421,7 @@
 
     this.createElements = function() {
         var $formatted, $graph, $graphWords, $graphFixedColumn, $graphContainer, $audioPlayers, $poemInfo;
+        $poemContainer.html('');
 
         $poemContainer.addClass('pc-container');
         //set up format to contain formatted poem text
@@ -553,7 +586,7 @@
         //create an audio div container
         $audioDiv = $('<div class="pc-audio-player-recording"></div>');
         $audioDiv.attr('data-recording-name', recordingName);
-        $audioDiv.append('<div class="pc-audio-player-label">Playing: ' + recordingName + '</div>');
+        $audioDiv.append('<div class="pc-audio-player-label">' + recordingName + '</div>');
         $audioDiv.hide();
 
         //create the audio element
@@ -561,11 +594,28 @@
         $audio.attr('controls', 'controls');
         $audio.attr('src', recordings[recordingName].url);
         $audio.attr('data-recording-name', recordingName);
+''
+        $audioDiv.append($audio);
+        $audioDiv.append('<div class="pc-audio-info">' +
+            '<div class="pc-audio-info-label">Name</div>' +
+            '<div class="pc-audio-info-value">' + recordings[recordingName].nameLong +
+            '</div></div></div>');
 
-        $audioDiv.prepend($audio);
+        if(recordings[recordingName].date) { $audioDiv.append(this.getAudioInfoElement('Date', recordings[recordingName].date)); }
+        if(recordings[recordingName].media) { $audioDiv.append(this.getAudioInfoElement('Media', recordings[recordingName].media)); }
+        if(recordings[recordingName].recordingType) { $audioDiv.append(this.getAudioInfoElement('Type', recordings[recordingName].recordingType)); }
+        if(recordings[recordingName].notes) { $audioDiv.append(this.getAudioInfoElement('Notes', recordings[recordingName].notes)); }
 
         return $audioDiv;
     }
+
+    this.getAudioInfoElement = function(label, value) {
+        return $('<div class="pc-audio-info">' +
+            '<div class="pc-audio-info-label">' + label +'</div>' +
+            '<div class="pc-audio-info-value">' + value +
+            '</div></div></div>');
+    }
+
     /**
      * Function to get the correlation class of a word
      * @param word
@@ -857,6 +907,7 @@
     this.init = function(options)
     {
         this.timeOut = -1;
+        parseRecordingsFromCsvUrl(options.recordingsCsvUrl);
         parsePoemTextFromCsvUrl(options.poemTextCsvUrl);
         parsePoemPhrasesFromCsvUrl(options.poemPhrasesCsvUrl);
         $poemContainer = options.poemContainer;
