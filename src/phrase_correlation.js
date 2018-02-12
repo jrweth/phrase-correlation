@@ -247,7 +247,7 @@
                 'startWord':     parseInt(poemPhrasesArray[i][4]),
                 'endLine':       parseInt(poemPhrasesArray[i][5]),
                 'endWord':       parseInt(poemPhrasesArray[i][6])
-            }
+            };
             phrase.id = phrase.startLine + '.' + phrase.startWord + '-' + phrase.endLine + '.' + phrase.endWord;
 
             //save the recording
@@ -344,7 +344,7 @@
                 phrases: {}
             };
         }
-    }
+    };
 
     /**
      *
@@ -492,13 +492,34 @@
         $graphContainer.append($graphFixedColumn);
         $graphContainer.append($graph);
         $poemInfo.append($graphContainer);
-        $poemInfo.append('<div class="pc-play-options"><input type="checkbox" class="pc-play-option-pause" />Pause after selected phrase played</div>');
+        $poemInfo.append('<div class="pc-play-options"><input type="checkbox" class="pc-play-option-pause" checked="checked"/>Pause after selected phrase played</div>');
+        $poemInfo.append(this.createLegendElement());
         $poemInfo.append($audioPlayers);
         $poemContainer.append($poemInfo);
         $poemContainer.append($formatted);
         this.adjustGraphSize();
     };
 
+    this.createLegendElement = function() {
+        var $legend = $('<div class="pc-legend"><div>Color Key:</div></div>');
+
+        for (var i = 2; i <= 5; i++) {
+            var $legendRow = $('<div class="pc-legend-row" data-numrecordings="' + i + '"></div>');
+            $legendRow.append('<div class = "pc-correlation-none">None</div>');
+
+            for (var j = 2; j <= i - 1; j++) {
+                $legendRow.append('<div class = "pc-correlation-' + j + 'of' + i + '">' + j + ' of ' + i + '</div>');
+            }
+
+            $legendRow.append('<div class = "pc-correlation-all">All</div>');
+
+            if (i != this.selectedRecordings.length) {
+                $legendRow.hide();
+            }
+            $legend.append($legendRow);
+        }
+        return $legend;
+    };
     /**
      * Adjust the graph size so that it just contains the
      */
@@ -882,6 +903,9 @@
         for(var i in recordings) {
             if(this.selectedRecordings.indexOf(recordings[i]) > -1) filtered.push(recordings[i]);
         }
+        $('.pc-legend-row').hide();
+        $('.pc-legend-row[data-numrecordings="' + this.selectedRecordings.length + '"]').show();
+
         return filtered;
     };
 
@@ -894,9 +918,8 @@
         $graph = $('.pc-graph');
         $graph.width($(window).width() - $graph.offset().left);
 
-        $
         //$('.pc-graph').width($(window).width() - $('.pc-graph').offset().left);
-    }
+    };
     /**
      * Initialize the correlator
      * @param options
@@ -924,7 +947,7 @@
         $poemContainer.on('click', '.pc-recording-phrase', function() {
             var $this = $(this);
             graphPhraseClicked($this.attr('data-phrase-id'), $this.attr('data-recording-name'));
-        })
+        });
 
         $poemContainer.on('click', '.pc-recording-toggle', function() {
             var $this = $(this);

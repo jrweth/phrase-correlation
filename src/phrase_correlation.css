@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     font-size: 12px;
-    width: 100%;
 }
 
 @media(min-width: 40em) {
@@ -10,7 +9,6 @@
         display: flex;
         flex-direction: row-reverse;
         flex-wrap: nowrap;
-        width: 100%;
         justify-content: flex-end;
         font-size: 16px;
     }
@@ -71,7 +69,8 @@ audio.pc-audio-element {
 }
 
 .pc-audio-players {
-    width: 99%;
+    width: 50em;
+    max-width: 90%;
     margin-right: 5px;
 }
 
@@ -222,4 +221,19 @@ audio.pc-audio-element {
     border-width: 0em 0.15em;
     border-style: solid;
     padding: .1em 0em;
+}
+
+.pc-legend {
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.pc-legend-row {
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.pc-legend-row div {
+    padding: 3px;
+    margin: 2px;
 }
