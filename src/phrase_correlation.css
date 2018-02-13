@@ -162,10 +162,10 @@ audio.pc-audio-element {
 .pc-correlation-all  {color: white; background-color: black; border-color: black }
 .pc-correlation-not-selected {color: black; background-color: transparent; border-color:transparent}
 
-.pc-correlation-2of3 {color: black; background-color: hsl(  0,  0%, 50%); border-color: hsl(  0, 0%, 50%) }
+.pc-correlation-2of3 {color: black; background-color: hsl(  0,  0%, 70%); border-color: hsl(  0, 0%, 70%) }
 
-.pc-correlation-2of4 {color: black; background-color: hsl(  0,  0%, 66%); border-color: hsl(  0, 0%, 66%) }
-.pc-correlation-3of4 {color: white; background-color: hsl(  0,  0%, 33%); border-color: hsl(  0, 0%, 33%) }
+.pc-correlation-2of4 {color: black; background-color: hsl(  0,  0%, 90%); border-color: hsl(  0, 0%, 90%) }
+.pc-correlation-3of4 {color: black; background-color: hsl(  0,  0%, 75%); border-color: hsl(  0, 0%, 75%) }
 
 .pc-correlation-2of5 {color: black; background-color: hsl(  0,  0%, 75%); border-color: hsl(  0, 0%, 75%) }
 .pc-correlation-3of5 {color: black; background-color: hsl(  0,  0%, 50%); border-color: hsl(  0, 0%, 50%) }
@@ -178,9 +178,9 @@ audio.pc-audio-element {
 .pc-recording-graph .pc-word.pc-correlation-all  { color: black}
 .pc-recording-graph .pc-word.pc-correlation-not-selected  { color: transparent}
 
-.pc-recording-graph .pc-word.pc-correlation-2of3 {color: hsl(  0,  0%, 50%); }
-.pc-recording-graph .pc-word.pc-correlation-2of4 {color: hsl(  0,  0%, 66%); }
-.pc-recording-graph .pc-word.pc-correlation-3of4 {color: hsl(  0,  0%, 33%); }
+.pc-recording-graph .pc-word.pc-correlation-2of3 {color: hsl(  0,  0%, 70%); }
+.pc-recording-graph .pc-word.pc-correlation-2of4 {color: hsl(  0,  0%, 90%); }
+.pc-recording-graph .pc-word.pc-correlation-3of4 {color: hsl(  0,  0%, 75%); }
 .pc-recording-graph .pc-word.pc-correlation-2of5 {color: hsl(  0,  0%, 75%); }
 .pc-recording-graph .pc-word.pc-correlation-3of5 {color: hsl(  0,  0%, 50%); }
 .pc-recording-graph .pc-word.pc-correlation-4of5 {color: hsl(  0,  0%, 25%); }
@@ -236,4 +236,24 @@ audio.pc-audio-element {
 .pc-legend-row div {
     padding: 3px;
     margin: 2px;
+}
+
+.pc-color-key {
+    font-weight: bold;
+    padding: 3px;
+    margin: 2px;
+}
+.pc-recording-info-link {
+    width: 1em;
+    height: 1em;
+    font-size: .8em;
+    font-style: italic;
+    display: inline-block;
+    background-color: #3399FF;
+    color: #ffffff;
+    text-align: center;
+    font-width: bold;
+    border-radius: 50%;
+    margin-left: .4em;
+    cursor: pointer;
 }

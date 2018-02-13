@@ -209,7 +209,7 @@
             }
             //most be equal -- go with the shortest phrase
             else {
-               return(poemPhrases[phraseId1].numWords - poemPhrases[phraseId2].numWords);
+                return(poemPhrases[phraseId1].numWords - poemPhrases[phraseId2].numWords);
             }
         });
         return matchedPhrases;
@@ -280,7 +280,7 @@
 
         selectedRecordings = [];
         for(var recordingName in recordings) {
-           selectedRecordings.push(recordingName);
+            selectedRecordings.push(recordingName);
         }
 
         //parse the lines
@@ -413,7 +413,7 @@
     this.checkLineEmpty = function(wordArray)
     {
         for(var i = 0; i < wordArray.length; i++) {
-           if(wordArray[i].trim().length > 0) return false;
+            if(wordArray[i].trim().length > 0) return false;
         }
         return true;
     };
@@ -478,6 +478,9 @@
                         if (word.firstOfPhrase) {
                             $word.addClass('pc-phrase-first-word');
                         }
+                        if(!word.lastOfPhrase && !word.firstOfPhrase) {
+                            $word.addClass('pc-phrase-middle-word');
+                        }
 
                         $line.append($word);
                         $graphWords.append($word.clone());
@@ -491,9 +494,9 @@
         $graphContainer = ($('<div class="pc-graph-container"></div>'));
         $graphContainer.append($graphFixedColumn);
         $graphContainer.append($graph);
+        $poemInfo.append(this.createLegendElement());
         $poemInfo.append($graphContainer);
         $poemInfo.append('<div class="pc-play-options"><input type="checkbox" class="pc-play-option-pause" checked="checked"/>Pause after selected phrase played</div>');
-        $poemInfo.append(this.createLegendElement());
         $poemInfo.append($audioPlayers);
         $poemContainer.append($poemInfo);
         $poemContainer.append($formatted);
@@ -501,17 +504,17 @@
     };
 
     this.createLegendElement = function() {
-        var $legend = $('<div class="pc-legend"><div>Color Key:</div></div>');
+        var $legend = $('<div class="pc-legend"><div class="pc-color-key">Phrase Correlation Key:</div></div>');
 
         for (var i = 2; i <= 5; i++) {
             var $legendRow = $('<div class="pc-legend-row" data-numrecordings="' + i + '"></div>');
-            $legendRow.append('<div class = "pc-correlation-none">None</div>');
+            $legendRow.append('<div class = "pc-word pc-correlation-none pc-phrase-first-word pc-phrase-last-word">None</div>');
 
             for (var j = 2; j <= i - 1; j++) {
-                $legendRow.append('<div class = "pc-correlation-' + j + 'of' + i + '">' + j + ' of ' + i + '</div>');
+                $legendRow.append('<div class = "pc-word pc-phrase-first-word pc-phrase-last-word pc-correlation-' + j + 'of' + i + '">' + j + ' of ' + i + '</div>');
             }
 
-            $legendRow.append('<div class = "pc-correlation-all">All</div>');
+            $legendRow.append('<div class = "pc-word pc-phrase-first-word pc-phrase-last-word pc-correlation-all">All</div>');
 
             if (i != this.selectedRecordings.length) {
                 $legendRow.hide();
@@ -539,6 +542,7 @@
         var $includeToggle  = $('<input type="checkbox" class="pc-recording-toggle">');
         var $playButton     = $('<div class="pc-play-button pc-paused">&#9654;</div>');
         var $recordingLabel = $('<div class="pc-recording-label">' + recordingName + '</div>');
+        var $infoLink       = $('<a title="info" class="pc-recording-info-link" data-recording-name="' + recordingName +'">i</a>');
 
         $playButton.attr('data-recording-name',recordingName);
 
@@ -549,6 +553,7 @@
         $fixedColumn.append($playButton);
         $fixedColumn.append($includeToggle);
         $fixedColumn.append($recordingLabel);
+        $fixedColumn.append($infoLink);
 
         return $fixedColumn;
     }
@@ -615,7 +620,6 @@
         $audio.attr('controls', 'controls');
         $audio.attr('src', recordings[recordingName].url);
         $audio.attr('data-recording-name', recordingName);
-''
         $audioDiv.append($audio);
         $audioDiv.append('<div class="pc-audio-info">' +
             '<div class="pc-audio-info-label">Name</div>' +
@@ -755,13 +759,12 @@
     {
         var $audio, $playButton, clipDuration;
         this.pauseAll();
-        $('.pc-audio-player-recording').hide();
+        this.showRecordingDetails(recordingName);
 
         $playButton = $('.pc-play-button[data-recording-name="' + recordingName + '"]');
         $playButton.addClass('pc-playing').html('&#10073;&#10073;');
 
         //show the audio div
-        $('.pc-audio-player-recording[data-recording-name="' + recordingName +'"]').show();
 
         $audio = $('audio[data-recording-name="' + recordingName + '"]');
         if(startTime) {
@@ -777,6 +780,11 @@
     };
 
 
+    this.showRecordingDetails = function(recordingName) {
+        $('.pc-audio-player-recording').hide();
+        $('.pc-audio-player-recording[data-recording-name="' + recordingName +'"]').show();
+
+    };
 
     /**
      * Pause all tracks
@@ -950,12 +958,15 @@
         });
 
         $poemContainer.on('click', '.pc-recording-toggle', function() {
-            var $this = $(this);
             updateRecordingSelection();
         });
 
+        $poemContainer.on('click', '.pc-recording-info-link', function() {
+            showRecordingDetails($(this).attr('data-recording-name'));
+        });
 
         $(window).resize(function() {onResize()});
+
 
 
     };
